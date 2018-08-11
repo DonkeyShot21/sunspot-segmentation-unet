@@ -15,9 +15,7 @@ from sunpy.physics.differential_rotation import solar_rotate_coordinate
 
 from astropy.units import Quantity
 from sunpy.map import Map
-
 from sunpy.net.vso import VSOClient
-from sunpy.net.hek2vso import hek2vso, H2VClient
 
 import cv2
 import torch
@@ -93,6 +91,24 @@ def show_mask(img, mask):
     r = cv2.add(b, 30, dst = b, mask = binary, dtype = cv2.CV_8U)
     cv2.merge((b,g,r), img)
     Image.fromarray(img).show()
+
+def multi_scale_slice(inputs, mask):
+    input_batch = []
+    mask_batch = []
+    for stride in [4096, 2048, 1024]:
+        for x in range(0, inputs.shape[0], stride):
+            for y in range(0, inputs.shape[1], stride):
+                input_patch = inputs[x:x+stride,y:y+stride]
+                mask_patch = mask[x:x+stride,y:y+stride]
+                if stride != 1024:
+                    input_patch = cv2.resize(input_patch, (1024,1024),
+                                    interpolation=cv2.INTER_AREA)
+                    mask_patch = cv2.resize(mask_patch, (1024,1024),
+                                    interpolation=cv2.INTER_NEAREST)
+                input_batch.append(input_patch)
+                mask_batch.append(mask_patch)
+    return np.array(input_batch), np.array(mask_batch)
+
 
 
 
@@ -185,8 +201,6 @@ class HelioDataset(Dataset):
             norm_num_px = cosine_amplifier * ws.iloc[i]['projected_whole_spot']
             ss_num_px = 8.7 * norm_num_px * disk_mask_num_px / 10e6
 
-            print(center, distance, cosine_amplifier, norm_num_px, ss_num_px)
-
             new = set([(p[1] - o + low[1][0], p[0] - o + low[0][0])])
             whole_spot = set()
             candidates = dict()
@@ -205,16 +219,18 @@ class HelioDataset(Dataset):
 
             whole_spot_mask.update(whole_spot)
 
-        print(whole_spot_mask - disk_mask)
         for c in set.intersection(whole_spot_mask, disk_mask):
             mask[c] = 1
 
         # show_mask(img_cont, mask)
-
         remove_if_exists(continuum_file)
         remove_if_exists(magnetic_file)
 
-        data_pair = {'img': torch.from_numpy(inputs), 'mask': torch.from_numpy(mask)}
+        multi_scale_slice(inputs, mask)
+        input_batch, mask_batch = multi_scale_slice(inputs, mask)
+
+        data_pair = {'img': torch.from_numpy(input_batch),
+                     'mask': torch.from_numpy(mask_batch)}
         return data_pair
 
 
