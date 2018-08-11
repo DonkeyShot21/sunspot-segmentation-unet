@@ -79,10 +79,9 @@ def train():
             param_group['lr'] = lr
 
         for idx, batch_data in enumerate(data_loader):
-            ft = 3 # forward_times
-            for i in range(0,len(batch_input),ft):
-                batch_input = Variable(batch_data['img'][i:i+ft]).cpu()
-                batch_gt_mask = Variable(batch_data['mask'][i:i+ft]).cpu()
+            for i in range(0,len(batch_input)):
+                batch_input = Variable(batch_data['img'][i:i+3]).cpu()
+                batch_gt_mask = Variable(batch_data['mask'][i:i+3]).cpu()
                 pred_mask = model(batch_input)
 
                 loss = loss_fn(pred_mask, batch_gt_mask)
@@ -92,9 +91,9 @@ def train():
                 print('Epoch:',epoch+1,'| Batch:',idx+1,'| lr:',lr,'| Loss:',loss.cpu().data.numpy())
                 loss_record.append(loss.cpu().data.numpy())
 
-                print("\nUpdate weights...")
-                opt.step()
-                opt.zero_grad()
+            print("\nUpdate weights...")
+            opt.step()
+            opt.zero_grad()
 
 
         if (epoch+1) % 1 == 0:

@@ -93,19 +93,25 @@ def show_mask(img, mask):
     Image.fromarray(img).show()
 
 def multi_scale_slice(inputs, mask):
+    cont = inputs[0]
+    mag = inputs[1]
     input_batch = []
     mask_batch = []
     for stride in [4096, 2048, 1024]:
-        for x in range(0, inputs.shape[0], stride):
-            for y in range(0, inputs.shape[1], stride):
-                input_patch = inputs[:,x:x+stride,y:y+stride]
+        for x in range(0, inputs.shape[1], stride):
+            for y in range(0, inputs.shape[2], stride):
+                print(stride, x, y)
+                cont_patch = cont[x:x+stride,y:y+stride]
+                mag_patch = mag[x:x+stride,y:y+stride]
                 mask_patch = mask[x:x+stride,y:y+stride]
                 if stride != 1024:
-                    input_patch = cv2.resize(input_patch, (1024,1024),
+                    cont_patch = cv2.resize(cont_patch, (1024,1024),
+                                    interpolation=cv2.INTER_AREA)
+                    mag_patch = cv2.resize(mag_patch, (1024,1024),
                                     interpolation=cv2.INTER_AREA)
                     mask_patch = cv2.resize(mask_patch, (1024,1024),
                                     interpolation=cv2.INTER_NEAREST)
-                input_batch.append(input_patch)
+                input_batch.append([cont_patch, mag_patch])
                 mask_batch.append(mask_patch)
     return np.array(input_batch), np.array(mask_batch)
 
@@ -226,11 +232,12 @@ class HelioDataset(Dataset):
         remove_if_exists(continuum_file)
         remove_if_exists(magnetic_file)
 
-        multi_scale_slice(inputs, mask)
         input_batch, mask_batch = multi_scale_slice(inputs, mask)
 
-        data_pair = {'img': torch.from_numpy(input_batch),
-                     'mask': torch.from_numpy(mask_batch)}
+        print(input_batch.shape)
+
+        data_pair = {'img': input_batch,
+                     'mask': mask_batch}
         return data_pair
 
 
