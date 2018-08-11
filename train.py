@@ -64,6 +64,7 @@ def train():
                            100)
 
     model = UNet().cpu()
+    model = model.double()
 
     loss_fn = torch.nn.BCEWithLogitsLoss()
     opt = torch.optim.RMSprop(model.parameters(), lr=init_lr)
@@ -79,9 +80,11 @@ def train():
             param_group['lr'] = lr
 
         for idx, batch_data in enumerate(data_loader):
-            for i in range(0,len(batch_input)):
-                batch_input = Variable(batch_data['img'][i:i+3]).cpu()
-                batch_gt_mask = Variable(batch_data['mask'][i:i+3]).cpu()
+            for i in range(0,len(batch_data)):
+                batch_input = Variable(batch_data['img'][0][i:i+1]).cpu()
+                batch_gt_mask = Variable(batch_data['mask'][0][i:i+1]).cpu()
+
+                print(batch_input.size())
                 pred_mask = model(batch_input)
 
                 loss = loss_fn(pred_mask, batch_gt_mask)

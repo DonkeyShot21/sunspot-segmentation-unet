@@ -27,7 +27,7 @@ from torchvision.transforms import Compose
 import math
 
 import warnings
-warnings.filterwarnings(action='once')
+warnings.filterwarnings('ignore')
 
 
 
