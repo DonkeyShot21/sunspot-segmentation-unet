@@ -98,7 +98,7 @@ def multi_scale_slice(inputs, mask):
     for stride in [4096, 2048, 1024]:
         for x in range(0, inputs.shape[0], stride):
             for y in range(0, inputs.shape[1], stride):
-                input_patch = inputs[x:x+stride,y:y+stride]
+                input_patch = inputs[:,x:x+stride,y:y+stride]
                 mask_patch = mask[x:x+stride,y:y+stride]
                 if stride != 1024:
                     input_patch = cv2.resize(input_patch, (1024,1024),
@@ -159,7 +159,7 @@ class HelioDataset(Dataset):
         # get the data from the maps
         img_cont = normalize_map(hmi_cont)
         img_mag = 2 * normalize_map(hmi_mag) - 1
-        inputs = np.dstack((img_cont, img_mag))
+        inputs = np.array([img_cont, img_mag])
 
         # get the coordinates and the date of the sunspots from DPD
         print("Creating mask...")

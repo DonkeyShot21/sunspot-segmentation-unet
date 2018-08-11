@@ -2,7 +2,7 @@ import torch
 from torch.autograd import Variable
 from torch.utils.data import DataLoader
 from unet import UNet
-from mias_dataset import MIASDataset
+from dataset import HelioDataset
 import torch.nn.functional as F
 import numpy as np
 import cv2
@@ -57,11 +57,11 @@ def dice_loss(input, target):
 
 def train():
     batch_size = 1
-    grad_accu_times = 3
     init_lr = 0.01
-    img_dir = 'data/all-mias'
-    metadata_path = 'metadata.csv'
-    dataset = MIASDataset(img_dir, metadata_path)
+
+    dataset = HelioDataset('./data/SIDC_dataset.csv',
+                           'data/sDPD2014.txt',
+                           100)
 
     model = UNet().cpu()
 
@@ -70,10 +70,9 @@ def train():
     opt.zero_grad()
 
     epoch = 0
-    forward_times = 0
     loss_record = []
     for epoch in range(100):
-        data_loader = DataLoader(dataset, batch_size, shuffle=False)
+        data_loader = DataLoader(dataset)
 
         lr = init_lr * (0.1 ** (epoch // 10))
         for param_group in opt.param_groups:
