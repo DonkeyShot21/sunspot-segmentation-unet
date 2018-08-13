@@ -49,20 +49,20 @@ class UNet(torch.nn.Module):
     def __init__(self):
         super(UNet, self).__init__()
 
-        self.down_block1 = UNet_down_block(2, 16, False)
-        self.down_block2 = UNet_down_block(16, 32, True)
-        self.down_block3 = UNet_down_block(32, 64, True)
-        self.down_block4 = UNet_down_block(64, 128, True)
-        self.down_block5 = UNet_down_block(128, 256, True)
+        self.down_block1 = UNet_down_block(2, 8, False)
+        self.down_block2 = UNet_down_block(8, 16, True)
+        self.down_block3 = UNet_down_block(16, 32, True)
+        self.down_block4 = UNet_down_block(32, 64, True)
+        self.down_block5 = UNet_down_block(64, 128, True)
         #self.down_block6 = UNet_down_block(256, 512, True)
         #self.down_block7 = UNet_down_block(512, 1024, True)
 
-        self.mid_conv1 = torch.nn.Conv2d(256, 256, 3, padding=1)
-        self.bn1 = torch.nn.BatchNorm2d(256)
-        self.mid_conv2 = torch.nn.Conv2d(256, 256, 3, padding=1)
-        self.bn2 = torch.nn.BatchNorm2d(256)
-        self.mid_conv3 = torch.nn.Conv2d(256, 256, 3, padding=1)
-        self.bn3 = torch.nn.BatchNorm2d(256)
+        self.mid_conv1 = torch.nn.Conv2d(128, 128, 3, padding=1)
+        self.bn1 = torch.nn.BatchNorm2d(128)
+        self.mid_conv2 = torch.nn.Conv2d(128, 128, 3, padding=1)
+        self.bn2 = torch.nn.BatchNorm2d(128)
+        self.mid_conv3 = torch.nn.Conv2d(128, 128, 3, padding=1)
+        self.bn3 = torch.nn.BatchNorm2d(128)
 
         #self.mid_conv1 = torch.nn.Conv2d(512, 512, 3, padding=1)
         #self.bn1 = torch.nn.BatchNorm2d(512)
@@ -80,14 +80,14 @@ class UNet(torch.nn.Module):
 
         #self.up_block1 = UNet_up_block(512, 1024, 512)
         #self.up_block2 = UNet_up_block(256, 512, 256)
-        self.up_block3 = UNet_up_block(128, 256, 128)
-        self.up_block4 = UNet_up_block(64, 128, 64)
-        self.up_block5 = UNet_up_block(32, 64, 32)
-        self.up_block6 = UNet_up_block(16, 32, 16)
+        self.up_block3 = UNet_up_block(64, 128, 64)
+        self.up_block4 = UNet_up_block(32, 64, 32)
+        self.up_block5 = UNet_up_block(16, 32, 16)
+        self.up_block6 = UNet_up_block(8, 16, 8)
 
-        self.last_conv1 = torch.nn.Conv2d(16, 16, 3, padding=1)
-        self.last_bn = torch.nn.BatchNorm2d(16)
-        self.last_conv2 = torch.nn.Conv2d(16, 1, 1, padding=0)
+        self.last_conv1 = torch.nn.Conv2d(8, 8, 3, padding=1)
+        self.last_bn = torch.nn.BatchNorm2d(8)
+        self.last_conv2 = torch.nn.Conv2d(8, 1, 1, padding=0)
         self.relu = torch.nn.ReLU()
 
     def forward(self, x):
