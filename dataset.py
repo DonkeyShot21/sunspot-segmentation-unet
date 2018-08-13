@@ -100,7 +100,6 @@ def multi_scale_slice(inputs, mask):
     for stride in [4096, 2048, 1024]:
         for x in range(0, inputs.shape[1], stride):
             for y in range(0, inputs.shape[2], stride):
-                print(stride, x, y)
                 cont_patch = cont[x:x+stride,y:y+stride]
                 mag_patch = mag[x:x+stride,y:y+stride]
                 mask_patch = mask[x:x+stride,y:y+stride]
@@ -112,7 +111,7 @@ def multi_scale_slice(inputs, mask):
                     mask_patch = cv2.resize(mask_patch, (1024,1024),
                                     interpolation=cv2.INTER_NEAREST)
                 input_batch.append([cont_patch, mag_patch])
-                mask_batch.append(mask_patch)
+                mask_batch.append([mask_patch])
     return np.array(input_batch), np.array(mask_batch)
 
 
@@ -234,12 +233,9 @@ class HelioDataset(Dataset):
 
         input_batch, mask_batch = multi_scale_slice(inputs, mask)
 
-        print(input_batch.shape)
-
-        data_pair = {'img': input_batch,
-                     'mask': mask_batch}
+        data_pair = {'img': torch.from_numpy(input_batch).float(),
+                     'mask': torch.from_numpy(mask_batch).float()}
         return data_pair
-
 
 
 

@@ -5,7 +5,7 @@ from unet import UNet
 from dataset import HelioDataset
 import torch.nn.functional as F
 import numpy as np
-import cv2
+import cv2, sys, os
 import matplotlib.pyplot as plt
 
 
@@ -61,18 +61,27 @@ def train():
 
     dataset = HelioDataset('./data/SIDC_dataset.csv',
                            'data/sDPD2014.txt',
-                           100)
+                           10)
 
     model = UNet().cpu()
-    model = model.double()
 
     loss_fn = torch.nn.BCEWithLogitsLoss()
     opt = torch.optim.RMSprop(model.parameters(), lr=init_lr)
     opt.zero_grad()
-
     epoch = 0
+
+    if len(sys.argv) > 1:
+        if os.path.isfile(sys.argv[1]):
+            print("=> loading checkpoint '{}'".format(sys.argv[1]))
+            checkpoint = torch.load(sys.argv[1])
+            epoch = checkpoint['epoch']
+            model.load_state_dict(checkpoint['state_dict'])
+            opt.load_state_dict(checkpoint['optimizer'])
+            print("=> loaded checkpoint '{}' (epoch {})"
+                  .format(sys.argv[1], checkpoint['epoch']))
+
     loss_record = []
-    for epoch in range(100):
+    for epoch in range(epoch, 100):
         data_loader = DataLoader(dataset)
 
         lr = init_lr * (0.1 ** (epoch // 10))
@@ -80,23 +89,23 @@ def train():
             param_group['lr'] = lr
 
         for idx, batch_data in enumerate(data_loader):
-            for i in range(0,len(batch_data)):
-                batch_input = Variable(batch_data['img'][0][i:i+1]).cpu()
-                batch_gt_mask = Variable(batch_data['mask'][0][i:i+1]).cpu()
+            for i in range(0,len(batch_data['img'][0])):
+                patch_input = Variable(batch_data['img'][0][i:i+1]).cpu()
+                patch_gt_mask = Variable(batch_data['mask'][0][i:i+1]).cpu()
 
-                print(batch_input.size())
-                pred_mask = model(batch_input)
+                pred_mask = model(patch_input)
 
-                loss = loss_fn(pred_mask, batch_gt_mask)
-                loss += dice_loss(F.sigmoid(pred_mask), batch_gt_mask)
+                loss = loss_fn(pred_mask, patch_gt_mask)
+                loss += dice_loss(F.sigmoid(pred_mask), patch_gt_mask)
                 loss.backward()
 
-                print('Epoch:',epoch+1,'| Batch:',idx+1,'| lr:',lr,'| Loss:',loss.cpu().data.numpy())
+                print('Epoch:',epoch+1,'| Batch:',idx+1,'| Patch:', i+1, '| lr:',lr,'| Loss:',loss.cpu().data.numpy())
                 loss_record.append(loss.cpu().data.numpy())
 
-            print("\nUpdate weights...")
-            opt.step()
-            opt.zero_grad()
+                if (i+1) % 3 == 0:
+                    print("\nUpdate weights...")
+                    opt.step()
+                    opt.zero_grad()
 
 
         if (epoch+1) % 1 == 0:
